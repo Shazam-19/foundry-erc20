@@ -65,4 +65,88 @@ contract OurTokenTest is Test {
     function testBobHasTokens() public view {
         assertEq(STARTING_BALANCE, token.balanceOf(bob), "Bob should have the initial balance");
     }
+
+    /**
+     * @notice Verifies that ERC20 allowances enable delegated token transfers.
+     * @dev
+     * Workflow:
+     * 1. Bob approves Alice to spend tokens on his behalf.
+     * 2. Alice transfers a portion of Bob's tokens using `transferFrom`.
+     * 3. The test confirms that balances are updated correctly.
+     *
+     * This demonstrates the standard ERC20 approval and allowance mechanism,
+     * where one account can authorize another account to spend tokens.
+     */
+    function testAllowancesWorks() public {
+        uint256 inititalAllowance = 1000;
+
+        // Bob grants Alice permission to spend up to 1,000 of his tokens.
+        vm.prank(bob);
+        token.approve(alice, inititalAllowance);
+
+        uint256 transferAmount = 500;
+
+        // Alice spends part of Bob's approved allowance.
+        vm.prank(alice);
+        token.transferFrom(bob, alice, transferAmount);
+
+        /*
+        * We are testing the ERC20 allowance mechanism.
+        *
+        * In this test, Bob has previously called `approve(alice, amount)`,
+        * which gives Alice permission to spend some of Bob's tokens.
+        *
+        * It may seem like calling:
+        *
+        *     token.transfer(alice, transferAmount);
+        *
+        * would move tokens from Bob to Alice, but that is not how
+        * ERC20 `transfer()` works.
+        *
+        * The `transfer()` function always sends tokens from the account
+        * making the call (`msg.sender`) to the recipient.
+        *
+        * Without a prank, `msg.sender` would be the test contract itself
+        * (`address(this)`), so the transfer would attempt to move tokens
+        * owned by the test contract, not tokens owned by Bob.
+        *
+        * Even if we used:
+        *
+        *     vm.prank(alice);
+        *     token.transfer(alice, transferAmount);
+        *
+        * the transfer would still send tokens from Alice's own balance,
+        * because Alice would now be `msg.sender`.
+        *
+        * In both cases, Bob's approved allowance is never checked or used,
+        * meaning we would not actually be testing the approval mechanism.
+        *
+        * To test allowances correctly, Alice must act as the caller and
+        * explicitly specify Bob as the source of the tokens:
+        *
+        *     vm.prank(alice);
+        *     token.transferFrom(bob, alice, transferAmount);
+        *
+        * `transferFrom()` is the ERC20 function designed for delegated
+        * transfers. It checks that:
+        *
+        * 1. Bob has enough tokens.
+        * 2. Bob approved Alice to spend them.
+        * 3. The allowance is reduced after the transfer.
+        *
+        * This is why `transferFrom()` is required here instead of
+        * `transfer()`.
+        */
+        // token.transfer(alice, transferAmount);
+
+        // Verify that Alice received the transferred tokens.
+        assertEq(token.balanceOf(alice), transferAmount, "Alice should have received the transferred tokens");
+
+        // Verify that Bob's balance decreased by the transferred amount.
+        assertEq(
+            token.balanceOf(bob),
+            STARTING_BALANCE - transferAmount,
+            "Bob's balance should be reduced by the transferred amount"
+        );
+    }
 }

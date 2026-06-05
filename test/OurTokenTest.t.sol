@@ -149,4 +149,14 @@ contract OurTokenTest is Test {
             "Bob's balance should be reduced by the transferred amount"
         );
     }
+
+    /**
+     * @notice Verifies that the entire initial supply is minted to the deployer.
+     * @dev The constructor mints all tokens to msg.sender.
+     */
+    function testConstructorMintsSupplyToDeployer() public {
+        OurToken freshToken = new OurToken(STARTING_BALANCE);
+
+        assertEq(freshToken.balanceOf(address(this)), STARTING_BALANCE);
+    }
 }

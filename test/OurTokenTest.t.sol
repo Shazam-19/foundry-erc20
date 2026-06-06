@@ -17,6 +17,10 @@ import {OurToken} from "../src/OurToken.sol";
  * ─────────────────────────────────────────────────────────────
  */
 contract OurTokenTest is Test {
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
     /* ─────────────────────────────────────────────
      * Contract Instances
      * ─────────────────────────────────────────────
@@ -244,5 +248,27 @@ contract OurTokenTest is Test {
 
         assertEq(token.balanceOf(alice), 500);
         assertEq(token.allowance(bob, alice), 500);
+    }
+
+    function testTransferEmitsEvent() public {
+        uint256 amount = 10 ether;
+
+        vm.expectEmit(true, true, false, true);
+
+        emit Transfer(bob, alice, amount);
+
+        vm.prank(bob);
+        token.transfer(alice, amount);
+    }
+
+    function testApproveEmitsEvent() public {
+        uint256 allowance = 1000;
+
+        vm.expectEmit(true, true, false, true);
+
+        emit Approval(bob, alice, allowance);
+
+        vm.prank(bob);
+        token.approve(alice, allowance);
     }
 }

@@ -164,4 +164,22 @@ contract OurTokenTest is Test {
             "Deployer should own remaining supply"
         );
     }
+
+    function testTransferWorks() public {
+        uint256 amount = 25 ether;
+
+        vm.prank(bob);
+        token.transfer(alice, amount);
+
+        assertEq(token.balanceOf(alice), amount);
+        assertEq(token.balanceOf(bob), STARTING_BALANCE - amount);
+    }
+
+    function testTransferEntireBalance() public {
+        vm.prank(bob);
+        token.transfer(alice, STARTING_BALANCE);
+
+        assertEq(token.balanceOf(bob), 0);
+        assertEq(token.balanceOf(alice), STARTING_BALANCE);
+    }
 }

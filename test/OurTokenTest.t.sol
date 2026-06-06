@@ -271,4 +271,27 @@ contract OurTokenTest is Test {
         vm.prank(bob);
         token.approve(alice, allowance);
     }
+
+    function testFuzzTransfer(uint256 amount) public {
+        amount = bound(amount, 0, STARTING_BALANCE);
+
+        vm.prank(bob);
+        token.transfer(alice, amount);
+
+        assertEq(token.balanceOf(alice), amount);
+        assertEq(token.balanceOf(bob), STARTING_BALANCE - amount);
+    }
+
+    function testFuzzAllowance(uint256 allowance, uint256 spendAmount) public {
+        allowance = bound(allowance, 1, STARTING_BALANCE);
+        spendAmount = bound(spendAmount, 0, allowance);
+
+        vm.prank(bob);
+        token.approve(alice, allowance);
+
+        vm.prank(alice);
+        token.transferFrom(bob, alice, spendAmount);
+
+        assertEq(token.allowance(bob, alice), allowance - spendAmount);
+    }
 }

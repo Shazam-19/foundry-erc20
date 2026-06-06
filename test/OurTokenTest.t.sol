@@ -157,10 +157,23 @@ contract OurTokenTest is Test {
         );
     }
 
+    /**
+     * @dev Verifies that the total token supply equals the initial supply
+     *      defined in the deploy script after deployment.
+     */
     function testInitialSupplyMinted() public view {
         assertEq(token.totalSupply(), deployer.INITIAL_SUPPLY(), "Total supply should equal initial supply");
     }
 
+    /**
+     * @dev Verifies that the deployer holds the remaining supply after
+     *      transferring STARTING_BALANCE to Bob in setUp().
+     *
+     *      Example:
+     *        INITIAL_SUPPLY   = 1000 OT
+     *        STARTING_BALANCE = 100 OT (sent to Bob)
+     *        Deployer balance = 1000 - 100 = 900 OT
+     */
     function testDeployerReceivedInitialSupply() public view {
         assertEq(
             token.balanceOf(msg.sender),
@@ -169,6 +182,16 @@ contract OurTokenTest is Test {
         );
     }
 
+    /**
+     * @dev Verifies that a standard transfer correctly moves tokens
+     *      from the sender to the recipient and updates both balances.
+     *
+     *      Example:
+     *        Bob balance before:   100 OT
+     *        Transfer amount:       25 OT
+     *        Bob balance after:     75 OT
+     *        Alice balance after:   25 OT
+     */
     function testTransferWorks() public {
         uint256 amount = 25 ether;
 
@@ -179,6 +202,10 @@ contract OurTokenTest is Test {
         assertEq(token.balanceOf(bob), STARTING_BALANCE - amount);
     }
 
+    /**
+     * @dev Verifies that transferring the entire balance leaves the
+     *      sender with zero tokens and the recipient with the full amount.
+     */
     function testTransferEntireBalance() public {
         vm.prank(bob);
         token.transfer(alice, STARTING_BALANCE);
@@ -187,6 +214,10 @@ contract OurTokenTest is Test {
         assertEq(token.balanceOf(alice), STARTING_BALANCE);
     }
 
+    /**
+     * @dev Verifies that transferring zero tokens is valid and does not
+     *      change any balances. ERC20 allows zero-value transfers.
+     */
     function testTransferZeroTokens() public {
         vm.prank(bob);
         token.transfer(alice, 0);
@@ -195,50 +226,97 @@ contract OurTokenTest is Test {
         assertEq(token.balanceOf(alice), 0);
     }
 
+    /**
+     * @dev Verifies that a transfer reverts when the sender does not
+     *      have enough tokens to cover the amount.
+     *
+     *      Alice has 0 tokens — attempting to transfer 1 token should revert.
+     */
     function testTransferFailsWhenBalanceInsufficient() public {
         vm.prank(alice);
 
+        // Expect the next call to revert with any reason.
         vm.expectRevert();
 
         token.transfer(bob, 1);
     }
 
+    /**
+     * @dev Verifies that the allowance decreases by the transferred amount
+     *      after a successful transferFrom().
+     *
+     *      Example:
+     *        Bob approves Alice for 1000 OT.
+     *        Alice spends 400 OT via transferFrom().
+     *        Remaining allowance = 1000 - 400 = 600 OT.
+     */
     function testAllowanceDecreasesAfterTransferFrom() public {
         uint256 allowance = 1000;
         uint256 amount = 400;
 
+        // Bob grants Alice permission to spend up to 1000 tokens on his behalf.
         vm.prank(bob);
         token.approve(alice, allowance);
 
+        // Alice spends 400 of Bob's tokens using the granted allowance.
         vm.prank(alice);
         token.transferFrom(bob, alice, amount);
 
         assertEq(token.allowance(bob, alice), allowance - amount);
     }
 
+    /**
+     * @dev Verifies that transferFrom() reverts when the spend amount
+     *      exceeds the approved allowance.
+     *
+     *      Example:
+     *        Bob approves Alice for 100 OT.
+     *        Alice attempts to spend 101 OT → should revert.
+     */
     function testTransferFromFailsWhenExceedingAllowance() public {
         vm.prank(bob);
         token.approve(alice, 100);
 
         vm.prank(alice);
 
+        // Expect the next call to revert — allowance is 100, spend is 101.
         vm.expectRevert();
 
         token.transferFrom(bob, alice, 101);
     }
 
+    /**
+     * @dev Verifies that transferFrom() reverts when no allowance has
+     *      been granted. Alice has no approval from Bob, so any spend
+     *      attempt should revert.
+     */
     function testTransferFromFailsWithoutApproval() public {
         vm.prank(alice);
 
+        // Expect the next call to revert — no prior approval exists.
         vm.expectRevert();
 
         token.transferFrom(bob, alice, 1);
     }
 
+    /**
+     * @dev Verifies that multiple transferFrom() calls correctly consume
+     *      the allowance and accumulate the recipient's balance.
+     *
+     *      Example:
+     *        Bob approves Alice for 1000 OT.
+     *        Alice calls transferFrom() twice: 300 OT + 200 OT = 500 OT total.
+     *        Remaining allowance = 1000 - 500 = 500 OT.
+     *        Alice balance = 500 OT.
+     *
+     *      vm.startPrank() / vm.stopPrank() impersonates Alice across
+     *      multiple calls without needing a vm.prank() on each one.
+     */
     function testMultipleTransferFromsConsumeAllowance() public {
         vm.prank(bob);
         token.approve(alice, 1000);
 
+        // Impersonate Alice for both transferFrom calls.
         vm.startPrank(alice);
 
         token.transferFrom(bob, alice, 300);
@@ -250,29 +328,80 @@ contract OurTokenTest is Test {
         assertEq(token.allowance(bob, alice), 500);
     }
 
+    /**
+     * @dev Verifies that a Transfer event is emitted with the correct
+     *      parameters when tokens are transferred.
+     *
+     *      vm.expectEmit() parameters: (checkTopic1, checkTopic2, checkTopic3, checkData)
+     *        - checkTopic1: true  → verify `from` (indexed).
+     *        - checkTopic2: true  → verify `to` (indexed).
+     *        - checkTopic3: false → no third indexed param.
+     *        - checkData:   true  → verify `amount` (non-indexed).
+     */
     function testTransferEmitsEvent() public {
         uint256 amount = 10 ether;
 
+        // Declare the expected event before the call that triggers it.
         vm.expectEmit(true, true, false, true);
-
         emit Transfer(bob, alice, amount);
 
+        // The actual call — Foundry compares the emitted event against the expectation.
         vm.prank(bob);
         token.transfer(alice, amount);
     }
 
+    /**
+     * @dev Verifies that an Approval event is emitted with the correct
+     *      parameters when an allowance is set.
+     */
     function testApproveEmitsEvent() public {
         uint256 allowance = 1000;
 
+        // Declare the expected event before the call that triggers it.
         vm.expectEmit(true, true, false, true);
-
         emit Approval(bob, alice, allowance);
 
+        // The actual call — Foundry compares the emitted event against the expectation.
         vm.prank(bob);
         token.approve(alice, allowance);
     }
 
+    /**
+     * @dev Verifies that calling approve() a second time completely replaces
+     *      the existing allowance rather than adding to it.
+     *
+     *      Example:
+     *        Bob sets allowance to 100 OT.
+     *        Bob sets allowance to 500 OT.
+     *        Final allowance = 500 OT (not 600).
+     */
+    function testApproveOverridesPreviousAllowance() public {
+        vm.prank(bob);
+        token.approve(alice, 100);
+
+        assertEq(token.allowance(bob, alice), 100);
+
+        // Second approval overwrites the first — not additive.
+        vm.prank(bob);
+        token.approve(alice, 500);
+
+        assertEq(token.allowance(bob, alice), 500, "New approval should replace old allowance");
+    }
+
+    /**
+     * @dev Fuzz test — verifies that transfer() works correctly for any
+     *      valid amount between 0 and STARTING_BALANCE.
+     *
+     *      bound() constrains the random input to a valid range so the
+     *      test never attempts to transfer more than Bob has.
+     *
+     *      Also verifies conservation of tokens: the sum of Alice and
+     *      Bob's balances must always equal STARTING_BALANCE.
+     *
+     * @param amount Fuzzed transfer amount, bounded to [0, STARTING_BALANCE].
+     */
     function testFuzzTransfer(uint256 amount) public {
+        // Constrain the fuzzed input to a valid range.
         amount = bound(amount, 0, STARTING_BALANCE);
 
         vm.prank(bob);
@@ -280,10 +409,27 @@ contract OurTokenTest is Test {
 
         assertEq(token.balanceOf(alice), amount);
         assertEq(token.balanceOf(bob), STARTING_BALANCE - amount);
+
+        // Verify token conservation — no tokens created or destroyed.
+        assertEq(token.balanceOf(alice) + token.balanceOf(bob), STARTING_BALANCE);
     }
 
+    /**
+     * @dev Fuzz test — verifies that transferFrom() correctly consumes
+     *      the allowance for any valid combination of allowance and spend amount.
+     *
+     *      Two bounds are applied:
+     *        - allowance is capped at STARTING_BALANCE (Bob's max balance).
+     *        - spendAmount is capped at allowance to ensure the call never reverts.
+     *
+     * @param allowance   Fuzzed allowance granted by Bob to Alice, bounded to [1, STARTING_BALANCE].
+     * @param spendAmount Fuzzed spend amount by Alice, bounded to [0, allowance].
+     */
     function testFuzzAllowance(uint256 allowance, uint256 spendAmount) public {
+        // Ensure allowance is at least 1 and within Bob's balance.
         allowance = bound(allowance, 1, STARTING_BALANCE);
+
+        // Ensure spend amount never exceeds the granted allowance.
         spendAmount = bound(spendAmount, 0, allowance);
 
         vm.prank(bob);
@@ -292,6 +438,7 @@ contract OurTokenTest is Test {
         vm.prank(alice);
         token.transferFrom(bob, alice, spendAmount);
 
+        // Verify the remaining allowance equals the original minus what was spent.
         assertEq(token.allowance(bob, alice), allowance - spendAmount);
     }
 }

@@ -18,8 +18,8 @@ contract DeployOurToken is Script {
     //
     // Example:
     //   1000 * 10**18 = 1000000000000000000000 units internally
-    //   → displayed as 1000 OT in wallets and front-ends.
-    uint256 public constant INITIAL_SUPPLY = 1000 * 10 ** 18;
+    //   → displayed as 1000 OurToken in wallets and front-ends.
+    uint256 public constant INITIAL_SUPPLY = 1000 ether;
 
     /**
      * @notice Deploys OurToken with the fixed initial supply.

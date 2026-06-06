@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 // 0.8.x includes built-in overflow/underflow protection — no SafeMath needed.
 
-import {Test} from "forge-std/Test.sol";
+import {Test, console} from "forge-std/Test.sol";
 import {DeployOurToken} from "../script/DeployOurToken.s.sol";
 import {OurToken} from "../src/OurToken.sol";
 
@@ -35,25 +35,27 @@ contract OurTokenTest is Test {
 
     // The token balance transferred to Bob during setUp().
     // Uses `ether` units since OurToken also has 18 decimals.
-    // 100 ether = 100 * 10**18 = 100 OT tokens.
+    // 1000 ether = 1000 * 10**18 = 1000 OurToken tokens.
     uint256 public constant STARTING_BALANCE = 100 ether;
 
-    /* ─────────────────────────────────────────────
-     * setUp()
-     * ─────────────────────────────────────────────
-     * Runs automatically before every test function.
-     * Deploys a fresh OurToken and transfers STARTING_BALANCE
-     * to Bob so tests have a funded actor to work with.
-     */
+    /*
+    * ─────────────────────────────────────────────
+    * setUp()
+    * ─────────────────────────────────────────────
+    * Runs automatically before every test function.
+    * Deploys a fresh OurToken instance and prepares test actors
+    * by funding Bob with tokens for testing transfers and approvals.
+    */
     function setUp() public {
         // Deploy the token using the production deploy script
-        // so tests reflect the same setup as a real deployment.
+        // so tests reflect the same deployment flow as production.
         deployer = new DeployOurToken();
         token = deployer.run();
 
-        // Transfer tokens to Bob from the deployer (msg.sender).
-        // vm.prank() makes the next call appear to come from msg.sender,
-        // who holds the full initial supply after deployment.
+        // The full initial token supply is minted to the deployer, which in this
+        // test setup is the test contract itself. To give Bob tokens for testing,
+        // we transfer a portion of the supply from the deployer account using
+        // vm.prank to impersonate the token holder.
         vm.prank(msg.sender);
         token.transfer(bob, STARTING_BALANCE);
     }
@@ -63,6 +65,7 @@ contract OurTokenTest is Test {
      *      Confirms the transfer in setUp() was executed correctly.
      */
     function testBobHasTokens() public view {
+        // Bob should have 100 tokens (100 * 10^18 units) after setUp() transfers them from the deployer.
         assertEq(STARTING_BALANCE, token.balanceOf(bob), "Bob should have the initial balance");
     }
 
@@ -150,13 +153,15 @@ contract OurTokenTest is Test {
         );
     }
 
-    /**
-     * @notice Verifies that the entire initial supply is minted to the deployer.
-     * @dev The constructor mints all tokens to msg.sender.
-     */
-    function testConstructorMintsSupplyToDeployer() public {
-        OurToken freshToken = new OurToken(STARTING_BALANCE);
+    function testInitialSupplyMinted() public view {
+        assertEq(token.totalSupply(), deployer.INITIAL_SUPPLY(), "Total supply should equal initial supply");
+    }
 
-        assertEq(freshToken.balanceOf(address(this)), STARTING_BALANCE);
+    function testDeployerReceivedInitialSupply() public view {
+        assertEq(
+            token.balanceOf(msg.sender),
+            deployer.INITIAL_SUPPLY() - STARTING_BALANCE,
+            "Deployer should own remaining supply"
+        );
     }
 }

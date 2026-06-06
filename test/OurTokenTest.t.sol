@@ -198,4 +198,51 @@ contract OurTokenTest is Test {
 
         token.transfer(bob, 1);
     }
+
+    function testAllowanceDecreasesAfterTransferFrom() public {
+        uint256 allowance = 1000;
+        uint256 amount = 400;
+
+        vm.prank(bob);
+        token.approve(alice, allowance);
+
+        vm.prank(alice);
+        token.transferFrom(bob, alice, amount);
+
+        assertEq(token.allowance(bob, alice), allowance - amount);
+    }
+
+    function testTransferFromFailsWhenExceedingAllowance() public {
+        vm.prank(bob);
+        token.approve(alice, 100);
+
+        vm.prank(alice);
+
+        vm.expectRevert();
+
+        token.transferFrom(bob, alice, 101);
+    }
+
+    function testTransferFromFailsWithoutApproval() public {
+        vm.prank(alice);
+
+        vm.expectRevert();
+
+        token.transferFrom(bob, alice, 1);
+    }
+
+    function testMultipleTransferFromsConsumeAllowance() public {
+        vm.prank(bob);
+        token.approve(alice, 1000);
+
+        vm.startPrank(alice);
+
+        token.transferFrom(bob, alice, 300);
+        token.transferFrom(bob, alice, 200);
+
+        vm.stopPrank();
+
+        assertEq(token.balanceOf(alice), 500);
+        assertEq(token.allowance(bob, alice), 500);
+    }
 }

@@ -182,4 +182,20 @@ contract OurTokenTest is Test {
         assertEq(token.balanceOf(bob), 0);
         assertEq(token.balanceOf(alice), STARTING_BALANCE);
     }
+
+    function testTransferZeroTokens() public {
+        vm.prank(bob);
+        token.transfer(alice, 0);
+
+        assertEq(token.balanceOf(bob), STARTING_BALANCE);
+        assertEq(token.balanceOf(alice), 0);
+    }
+
+    function testTransferFailsWhenBalanceInsufficient() public {
+        vm.prank(alice);
+
+        vm.expectRevert();
+
+        token.transfer(bob, 1);
+    }
 }

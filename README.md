@@ -7,34 +7,53 @@ A Foundry-based ERC20 token project built with Solidity and OpenZeppelin. This r
 
 ## Table of Contents
 
-* [About The Project](#about-the-project)
-* [Features](#features)
-* [How It Works](#how-it-works)
-* [Built With](#built-with)
-* [Project Structure](#project-structure)
-* [Getting Started](#getting-started)
 
-  * [Prerequisites](#prerequisites)
-  * [Installation](#installation)
-  * [Environment Variables](#environment-variables)
-* [Usage](#usage)
 
-  * [Deploy Locally (Anvil)](#deploy-locally-anvil)
-  * [Deploy to Sepolia](#deploy-to-sepolia)
-  * [Deploy to zkSync](#deploy-to-zksync)
-  * [Verify Contract](#verify-contract)
-* [Running Tests](#running-tests)
-* [Contract Overview](#contract-overview)
 
-  * [OurToken](#ourtoken)
-  * [ManualToken](#manualtoken)
-  * [DeployOurToken Script](#deployourtoken-script)
-* [Security Considerations](#security-considerations)
-* [Supported Networks](#supported-networks)
-* [Roadmap](#roadmap)
-* [Contributing](#contributing)
-* [License](#license)
-* [Acknowledgments](#acknowledgments)
+
+
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#about-the-project">About The Project</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="#built-with">Built With</a></li>
+    <li><a href="#project-structure">Project Structure</a></li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+        <li><a href="#environment-variables">Environment Variables</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#usage">Usage</a>
+      <ul>
+        <li><a href="#deploy-locally-anvil">Deploy Locally (Anvil)</a></li>
+        <li><a href="#deploy-to-sepolia">Deploy to Sepolia</a></li>
+        <li><a href="#deploy-to-zksync">Deploy to zkSync</a></li>
+        <li><a href="#verify-contract">Verify Contract</a></li>
+      </ul>
+    </li>
+    <li><a href="#running-tests">Running Tests</a></li>
+    <li><a href="#contract-overview">Contract Overview</a></li>
+      <ul>
+        <li><a href="#ourtoken">OurToken</a></li>
+        <li><a href="#manualtoken">ManualToken</a></li>
+        <li><a href="#deployourtoken-script">DeployOurToken Script</a></li>
+      </ul>
+    <li><a href="#security-considerations">Security Considerations</a></li>
+    <li><a href="#supported-networks">Supported Networks</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#author">Author</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
+  </ol>
+</details>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -199,14 +218,13 @@ make build
 Create a `.env` file in the project root:
 
 ```env
-SEPOLIA_RPC_URL="your_rpc_url"
-PRIVATE_KEY="your_private_key"
-ETHERSCAN_API_KEY="your_etherscan_api_key"
-
-ACCOUNT="foundry_account_name"
-SENDER="wallet_address"
-
+SEPOLIA_RPC_URL="your_sepolia_rpc_url"
+ETH_MAINNET_RPC_URL="your_alchemy_rpc_url"
 ZKSYNC_SEPOLIA_RPC_URL="your_zksync_rpc_url"
+ALCHEMY_API_KEY="your_alchemy_api_key"
+ETHERSCAN_API_KEY="your_etherscan_api_key"
+PRIVATE_KEY="your_wallet_private_key"
+DEPLOYED_CONTRACT_ADDRESS="deployed_contract_address_on_sepolia"
 ```
 
 > ⚠️ Never commit your private key or `.env` file to source control.
@@ -435,21 +453,35 @@ Potential future improvements:
 
 ## Contributing
 
-Contributions are welcome.
+Contributions are what make the open source community such an amazing place to learn and grow. Any contributions you make are **greatly appreciated**.
 
-To contribute:
+If you have a suggestion that would improve this project, please fork the repo and open a pull request. You can also open an issue with the tag `enhancement`.
 
-1. Fork the repository.
-2. Create a feature branch.
-3. Commit your changes.
-4. Push your branch.
-5. Open a pull request.
-
-Please ensure all tests pass before submitting changes:
-
+1. Fork the repository
+2. Create your feature branch:
 ```sh
-forge test
+git checkout -b feature/YourFeature
 ```
+3. Commit your changes following the [Conventional Commits](https://www.conventionalcommits.org/) format:
+```sh
+git commit -m "feat: add your feature description"
+```
+4. Push to your branch:
+```sh
+git push origin feature/YourFeature
+```
+5. Open a Pull Request
+
+### Commit Prefix Guide
+
+| Prefix | Use for |
+|--------|---------|
+| `feat` | New feature or function |
+| `fix` | Bug fix |
+| `docs` | Documentation or comments only |
+| `refactor` | Code restructuring without behaviour change |
+| `test` | Adding or updating tests |
+| `chore` | Maintenance tasks (config, dependencies) |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -460,6 +492,14 @@ forge test
 This project is licensed under the MIT License.
 
 See the SPDX license identifiers in the source files for details.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+---
+
+## Author
+
+**Abdelrahman Sayed**
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
